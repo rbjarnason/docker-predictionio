@@ -11,7 +11,7 @@ ENV PATH=${PIO_HOME}/bin:$PATH
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 
 RUN apt-get update \
-    && apt-get install -y --auto-remove --no-install-recommends curl openjdk-8-jdk libgfortran3 python-pip \
+    && apt-get install -y --auto-remove --no-install-recommends curl maven openjdk-8-jdk libgfortran3 python-pip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -43,6 +43,21 @@ COPY files/hbase-site.xml ${PIO_HOME}/vendors/hbase-${HBASE_VERSION}/conf/hbase-
 RUN sed -i "s|VAR_PIO_HOME|${PIO_HOME}|" ${PIO_HOME}/vendors/hbase-${HBASE_VERSION}/conf/hbase-site.xml \
     && sed -i "s|VAR_HBASE_VERSION|${HBASE_VERSION}|" ${PIO_HOME}/vendors/hbase-${HBASE_VERSION}/conf/hbase-site.xml
 
+RUN pip install --upgrade pip
+RUN pip install -U setuptools
+RUN pip install predictionio datetime
+
+RUN apt-get update && apt-get install -y git
+
+# Build Mahout (Temporary But Necessary)
+RUN git clone https://github.com/apache/mahout.git mahout
+RUN cd mahout;git checkout 00a2883ec69b0807a5486c61dfcc7ef27f35ddc6
+RUN cd mahout;mvn clean install -DskipTests
+
+# Build The Universal Recommender
+RUN git clone https://github.com/actionml/universal-recommender.git ~/ur
+
+RUN apt-get update && apt-get install -y vim sudo
 #prepare example: Similar Product Engine Template
 #(http://predictionio.incubator.apache.org/templates/similarproduct/quickstart/)
 #RUN pio template get apache/incubator-predictionio-template-similar-product MySimilarProduct
